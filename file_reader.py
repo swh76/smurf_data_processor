@@ -95,7 +95,10 @@ def new_file_reader(R):
         # Init channel sums
         initialTime = None
 
-        fileList = sorted(glob.glob(R['data_directory'] + R['run_name'] + '.dat.part_0*'))
+        if R['cat_files']:
+            fileList = sorted(glob.glob(R['data_directory'] + R['run_name'] + '.dat.part_0*'))
+        else:
+            fileList = [R['data_directory'] + R['run_name'] + '.dat']
 
         with open(R['txtfname'],'w') as of, SmurfStreamReader(fileList,isRogue=R['rogue_format']) as fr:
 
