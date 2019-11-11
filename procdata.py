@@ -13,6 +13,7 @@ defaultdatadir = "/mnt/d/smurf_data/Pole_LMS_2/"
 
 
 R0 = dict() # will hold base parameters to be updateed
+R0['rogue_format']   = False
 R0['data_directory'] = defaultdatadir  #where the data is located
 R0['temp_directory'] = '/tmp/'  # where the temporary text file is created
 R0['plot_directory'] = './Plots/'  # where the plots and output file are saved
@@ -171,7 +172,8 @@ for R in Runlist:
     if not R['active']:
         continue
     print(R['run_name'])
-    D = file_reader.file_reader(R)  # cats, and reads data file
+    #D = file_reader.file_reader(R)  # cats, and reads data file
+    D = file_reader.new_file_reader(R)  # read data file using python
     analyzedata.run(D, R)  # this does all the real work
     if R['show_plots']:
         input("Wait for plots to appear, then press enter to continue to the next run")
