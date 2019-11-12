@@ -68,8 +68,84 @@ The help file for the extract program follows:
 """
 import subprocess   # used for the cat command
 import numpy as np
+import glob
+import time
+from SmurfFileReader import SmurfStreamReader
+
+def new_file_reader(R):
+
+    stime = time.time()
+
+    R['txtfname'] = R['temp_directory'] +  R['run_name'] + '.txt' # extract to temp diretory
+
+    if R['extract_txt']:
+        chanList = []
+
+        if R['num_averages'] == 0:
+            numAverages = 1
+        else:
+            numAverages = R['num_averages']
+
+        # Read in channel list
+        with open(R['list_file']) as f:
+            for line in f.readlines():
+                if line.rstrip().isdigit():
+                    chanList.append(int(line))
+
+        # Init channel sums
+        initialTime = None
+
+        if R['cat_files']:
+            fileList = sorted(glob.glob(R['data_directory'] + R['run_name'] + '.dat.part_0*'))
+        else:
+            fileList = [R['data_directory'] + R['run_name'] + '.dat']
+
+        with open(R['txtfname'],'w') as of, SmurfStreamReader(fileList,isRogue=R['rogue_format']) as fr:
+
+            for header,data in fr.records():
+
+                if initialTime is None:
+                    initialTime = header.counter_2
+                    chanSum = np.zeros(len(data),np.float)
+                    avgCount = 0
+
+                if numAverages != 1:
+                    chanSum += data
+
+                avgCount += 1
+
+                if avgCount == numAverages:
+
+                    if numAverages != 1:
+                        chanAvg = chanSum / avgCount
+                        chanSum = np.zeros(len(data),np.float)
+                    else:
+                        chanAvg = data
+
+                    avgCount = 0
+
+                    # Time
+                    diff = header.counter_2 - initialTime
+                    real = (diff >> 32) + (diff & 0xFFFFFFFF) / 1e9
+                    line = '{0:.6f}'.format(real)
+
+                    if R['diag_timing']:
+                        line += ' {} {} {}'.format(header.frame_counter,header.external_time,header.timestamp)
+
+                    for c in chanList:
+                        line += ' {0:.2f}'.format(chanAvg[c])
+
+                    of.write(line + '\n')
+
+    D = np.loadtxt(R['txtfname']) # numpy import of text file
+
+    print("new_file_reader completed in {} seconds".format(time.time() - stime))
+    return(D)
 
 def file_reader(R):
+
+    stime = time.time()
+
     if R['cat_files']:
         datfname = R['temp_directory'] +  R['run_name'] + '.dat'
         catcmd = 'cat ' + R['data_directory']+ R['run_name'] + '.dat.part_0*' + ' > ' + datfname
@@ -95,6 +171,8 @@ def file_reader(R):
             print('extracting: ' +  extractcmd)
         x = subprocess.call(extractcmd, shell=True) 
     D = np.loadtxt(R['txtfname']) # numpy import of text file
+
+    print("file_reader completed in {} seconds".format(time.time() - stime))
     return(D)
 
 class channel_mapping:

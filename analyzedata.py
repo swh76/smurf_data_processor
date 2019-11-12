@@ -227,14 +227,15 @@ def run(D, R): # R is a dictinoary that has control parameters
                     Be =  D[rs:sp,2*p+timing_channels+1]
                     ec=  ec + elnodcalib(Ae, Be, R['elnod_lowpass']) / ne #normalized
             Cx = Ax - Bx * ec # elnod corrected
-
-            plt.plot(Tx, Cx, 'g-')
+            if R['use_elnod']:
+                plt.plot(Tx, Cx, 'g-')
 
             b,a = signal.butter(4, 1.0/R['lowpass_pts']) # butterworth filter generation
             Af = signal.filtfilt(b, a, Ax)
             Bf = signal.filtfilt(b, a, Bx)
             Cf = signal.filtfilt(b, a, Cx)
-            plt.plot(Tx, Cf, 'c-')
+            if R['use_elnod']:
+                plt.plot(Tx, Cf, 'c-')
             
             plt.grid()
             plt.xlabel(R['x_time_name'])
